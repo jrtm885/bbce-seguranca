@@ -1,0 +1,47 @@
+resources:
+  repositories:
+  - repository: MyAzureReposGitRepository
+    type: git
+    name:  e-Hub/bbce-seguranca
+
+trigger:
+- master
+
+pool:
+  vmImage: ubuntu-18.04
+
+stages:
+- stage: desenvolvimento
+  jobs:
+    - deployment: desenvolvimento
+      environment: desenvolvimento
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - task: Docker@2
+                inputs: 
+                  repository: '$(ECR_URL)'
+                  command: 'build'
+                  Dockerfile: 'Dockerfile'
+                  tags: '$(Build.BuildId)'                  
+              - task: ECRPushImage@1
+                inputs:
+                  awsCredentials: 'aws-shared-ecr'
+                  regionName: 'us-west-2'
+                  imageSource: 'imagename'
+                  sourceImageName: '$(ECR_URL)'
+                  sourceImageTag: '$(Build.BuildId)'
+                  repositoryName: '$(ECR_NAME)'
+                  pushTag: '$(Build.BuildId)'
+              - task: CopyFiles@2
+                inputs:
+                  SourceFolder: '$(System.DefaultWorkingDirectory)'
+                  Contents: '**'
+                  TargetFolder: '$(Build.ArtifactStagingDirectory)'
+                  OverWrite: true
+              - task: PublishBuildArtifacts@1
+                inputs:
+                  PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+                  publishLocation: 'Container'

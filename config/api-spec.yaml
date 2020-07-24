@@ -1,0 +1,132 @@
+swagger: "2.0"
+info:
+  description: "Api contendo microserviços relacionados à arquitetura de segurança"
+  version: "1.0.0"
+  title: "BBCE Security API"
+  termsOfService: "http://todo.to.do"
+  contact:
+    email: "jonathan.martinez@grupomult.com.br"
+basePath: "/security"
+tags:
+  - name: "UserScope"
+    description: "Informações relacionadas aos escopos de determinado usuário"
+  - name: "Access"
+    description: "Informações relacionadas às validação de acesso de determinado usuário à determinada api."
+schemes:
+- "http"
+- "https"
+paths:
+  /v1/user_scope:
+    get:
+      tags:
+      - "UserScope"
+      summary: "Retorna todas as permissões de determinado usuário"
+      operationId: "getUserScope"
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              type: integer
+            example: [10,15,20]
+        400:
+          description: "Bad Request"
+          schema:
+            $ref: '#/definitions/ErrorBadRequest'
+        401:
+          description: "Not Authorized"
+        404:
+          description: "Resource not found."
+          schema:
+            $ref: '#/definitions/ErrorNotFound'
+        500:
+          description: "Internal Server Error"
+          schema:
+            $ref: '#/definitions/Error'
+  /v1/access/validate_access:
+    post:
+      tags:
+      - "Access"
+      summary: "Valida se determinado usuário possui acesso à determinada api."
+      operationId: "validateAccess"
+      produces:
+      - "application/json"
+      parameters:
+        - in: body
+          name: access
+          description: The informations to validate if an user is allowed to access an api.
+          schema:
+            $ref: '#/definitions/Access'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/AccessResponse'
+        400:
+          description: "Bad Request"
+          schema:
+            $ref: '#/definitions/ErrorBadRequest'
+        401:
+          description: "Not Authorized"
+        404:
+          description: "Resource not found."
+          schema:
+            $ref: '#/definitions/ErrorNotFound'
+        500:
+          description: "Internal Server Error"
+          schema:
+            $ref: '#/definitions/Error'
+
+definitions: 
+  Access:           
+    type: object
+    required:
+      - api
+      - verb
+    properties:
+      api:
+        type: string
+      verb:
+        type: string
+  AccessResponse:           
+    type: object      
+    properties:
+      access:
+        type: boolean
+      message:
+        type: string
+    required:
+    - "message"
+  Error:           
+    type: object  
+    properties:
+      message:
+        type: "string"
+        description: "Description message of the given error"
+        example: "Unexpected error"
+  ErrorBadRequest:
+    type: "object"
+    required:
+    - "message"
+    properties:
+      message:
+        type: "string"
+        description: "Description message of the given error"
+        example: "userEmail parameter is required."
+  ErrorNotFound:
+    type: "object"
+    required:
+    - "message"
+    properties:
+      message:
+        type: "string"
+        description: "Description message of the given error"
+        example: "userscope [email@email.com] not found."
+  
+  
+externalDocs:
+  description: "TODO Find out more about Swagger"
+  url: "http://todo.io"

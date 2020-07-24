@@ -1,0 +1,90 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: commons
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: bbce-security
+  namespace: commons
+type: Opaque
+stringData:
+    AWS_ACCESS_KEY_ID: "$(DYNAMODB_AWS_ACCESS_KEY_ID)"
+    AWS_SECRET_ACCESS_KEY: "$(DYNAMODB_AWS_SECRET_ACCESS_KEY)"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bbce-security
+  namespace: commons
+spec:
+  selector:
+    matchLabels:
+      app: bbce-security
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: bbce-security
+    spec:
+      containers:
+      - name: bbce-security
+        image: $(ECR_URL):$(Build.BuildId)
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom: 
+            secretKeyRef:
+              name: bbce-security
+              key: AWS_ACCESS_KEY_ID
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom: 
+            secretKeyRef:
+              name: bbce-security
+              key: AWS_SECRET_ACCESS_KEY
+        - name: ENVIRONMENT
+          value: "$(ENVIRONMENT)"
+        - name: REGION
+          value: "$(REGION)"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bbce-security
+  namespace: commons
+spec:
+  selector:
+    app: bbce-security
+  ports:
+    - port: 8000
+      name: bbce-security-8000
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: bbce-security
+  namespace: commons
+  annotations:
+    traefik.ingress.kubernetes.io/rewrite-target: /
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/auth-tls-secret: commons/bbce-ca-cert
+spec:
+  rules:
+  - host: $(API_URL)
+    http:
+      paths:
+      - backend:
+          serviceName: bbce-security
+          servicePort: 8000
+  tls:
+  - secretName: bbce-cert
