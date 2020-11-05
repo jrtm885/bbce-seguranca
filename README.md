@@ -1,5 +1,5 @@
 # Introduction 
-Este projeto tem como objetivo ser o componente que irá verificar se determinado usuário possui acesso a determinada api. Será peça fundamental na arquitetura de segurança da bbce.
+Este projeto tem como objetivo ser o componente que irá verificar se determinado usuário possui acesso a determinada api. Será peça fundamental na arquitetura de segurança.
 
 
 # Getting Started
